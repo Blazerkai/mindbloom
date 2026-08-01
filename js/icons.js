@@ -1,0 +1,52 @@
+// Minimal, self-contained line-icon set (24x24, stroke-based) — no external
+// icon font or CDN dependency. icon(name, opts) returns an inline SVG string.
+
+const PATHS = {
+  brand: '<path d="M12 3c-2 3-2 6 0 9 2-3 2-6 0-9z"/><path d="M12 12c-4 0-7 2-8 5 3 1 6 0 8-3 2 3 5 4 8 3-1-3-4-5-8-5z"/>',
+  home: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
+  cpu: '<rect x="7" y="7" width="10" height="10" rx="1"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.5 4.5l2 2M17.5 4.5l-2 2M4.5 19.5l2-2M17.5 19.5l-2-2"/>',
+  flame: '<path d="M12 2c1 4-3 5-3 9a3 3 0 006 0c0-1-1-2-1-3 2 1 3 3 3 5a5 5 0 01-10 0c0-5 3-6 5-11z"/>',
+  trendingUp: '<polyline points="3 17 9 11 13 15 21 6"/><polyline points="15 6 21 6 21 12"/>',
+  target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.6" fill="currentColor"/>',
+  barChart: '<line x1="5" y1="21" x2="5" y2="11"/><line x1="12" y1="21" x2="12" y2="6"/><line x1="19" y1="21" x2="19" y2="14"/>',
+  bookOpen: '<path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v13c-3-1-6-1-9 1-3-2-6-2-9-1z"/><path d="M12 6v13"/>',
+  star: '<polygon points="12 2 15 9 22 9.5 16.5 14 18 21 12 17.2 6 21 7.5 14 2 9.5 9 9"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4.5 5-6 8-6s6.5 1.5 8 6"/>',
+  shoppingBag: '<path d="M6 8h12l1 13H5z"/><path d="M9 8a3 3 0 016 0"/>',
+  award: '<circle cx="12" cy="9" r="5"/><path d="M9 13.5L7.5 21 12 18.5 16.5 21 15 13.5"/>',
+  users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0.8-3.4 3-5 6-5s5.2 1.6 6 5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 12.2c1.9.4 3.4 1.8 4.5 4.8"/>',
+  bell: '<path d="M6 10a6 6 0 0112 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5z"/><path d="M10 19a2 2 0 004 0"/>',
+  settings: '<circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 00-.2-1.6l2-1.4-2-3.4-2.3.8a7 7 0 00-2.8-1.6L13.2 2h-2.4l-.5 2.8a7 7 0 00-2.8 1.6l-2.3-.8-2 3.4 2 1.4A7 7 0 005 12c0 .5.1 1 .2 1.6l-2 1.4 2 3.4 2.3-.8a7 7 0 002.8 1.6l.5 2.8h2.4l.5-2.8a7 7 0 002.8-1.6l2.3.8 2-3.4-2-1.4c.1-.6.2-1.1.2-1.6z"/>',
+  droplet: '<path d="M12 3s7 7.5 7 12a7 7 0 01-14 0c0-4.5 7-12 7-12z"/>',
+  moon: '<path d="M20 14.5A8.5 8.5 0 1110 4a7 7 0 0010 10.5z"/>',
+  pulse: '<polyline points="3 12 8 12 10 6 14 18 16 12 21 12"/>',
+  fileText: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><line x1="9.5" y1="12" x2="15" y2="12"/><line x1="9.5" y1="16" x2="15" y2="16"/>',
+  repeat: '<path d="M4 7h13l-3-3"/><path d="M20 17H7l3 3"/>',
+  checkCircle: '<circle cx="12" cy="12" r="9"/><polyline points="8 12.5 11 15.5 16 9"/>',
+  alertTriangle: '<path d="M12 4l9.5 16h-19z"/><line x1="12" y1="10" x2="12" y2="14.5"/><circle cx="12" cy="17.3" r="0.6" fill="currentColor"/>',
+  coins: '<circle cx="9" cy="9" r="5.5"/><path d="M13.5 6a5.5 5.5 0 010 11"/>',
+  sparkles: '<path d="M12 3l1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4z"/><path d="M19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7z"/>',
+  thumbsUp: '<path d="M7 11v9H4v-9z"/><path d="M7 11l3.5-7a2 2 0 012 2v4H18a2 2 0 012 2.3l-1.4 6A2 2 0 0116.6 20H7"/>',
+  feather: '<path d="M20 4S9 5 6 11c-2 4-2 8-2 8s4 0 8-2c6-3 7-14 7-14z"/><line x1="8" y1="16" x2="20" y2="4"/>',
+  rocket: '<path d="M12 2c3 1 5 5 5 9 0 3-2 6-2 6H9s-2-3-2-6c0-4 2-8 5-9z"/><path d="M9 15l-3 5 5-2M15 15l3 5-5-2"/><circle cx="12" cy="10" r="1.4" fill="currentColor"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="M21 16l-5.5-5.5L4 21"/>',
+  gem: '<path d="M4 8l3-5h10l3 5-8 12z"/><path d="M4 8h16M9 3l2 5-2.5 12M15 3l-2 5 2.5 12"/>',
+  cloud: '<path d="M7 18a4.5 4.5 0 01-.5-9A6 6 0 0118 10.5 4 4 0 0117.5 18z"/>',
+  sunrise: '<path d="M4 18h16"/><path d="M6 15a6 6 0 0112 0"/><line x1="12" y1="4" x2="12" y2="8"/><line x1="4.5" y1="9.5" x2="7" y2="11.5"/><line x1="19.5" y1="9.5" x2="17" y2="11.5"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  logOut: '<path d="M9 4H5a1 1 0 00-1 1v14a1 1 0 001 1h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+  x: '<line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/>',
+  shield: '<path d="M12 3l7 3v6c0 5-3 8-7 9-4-1-7-4-7-9V6z"/>',
+  crown: '<path d="M4 8l4 3 4-6 4 6 4-3-1.5 10h-13z"/>',
+  leaf: '<path d="M5 19c9 0 14-5 14-14-9 0-14 5-14 14z"/><path d="M5 19c3-6 6-9 11-11"/>',
+  zap: '<polygon points="13 2 4 14 11 14 10 22 20 9 13 9"/>',
+  chevronRight: '<polyline points="9 6 15 12 9 18"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+};
+
+export function icon(name, { size = 18, className = "", strokeWidth = 1.8 } = {}) {
+  const body = PATHS[name] || PATHS.sparkles;
+  return `<svg class="icon ${className}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+}
