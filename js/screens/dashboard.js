@@ -2,12 +2,13 @@ import { buildWellbeingSnapshot, computeBurnout, generateTodayInsight } from "..
 import { profileRepo, studyPlannerRepo, playerRepo, leaderboardRepo } from "../repositories.js";
 import { statTile, skeleton, aiBanner } from "../components.js";
 import { stageForLevel } from "./character.js";
+import { capitalize } from "../utils.js";
 
 export async function render(container) {
   const [profile, player] = await Promise.all([profileRepo.get(), playerRepo.get()]);
   container.innerHTML = `
     <div class="screen-title">
-      <div><h2>Welcome back, ${profile?.name || "Bloomer"}</h2><p class="muted">Here's your wellbeing snapshot today</p></div>
+      <div><h2>Welcome back, ${capitalize(profile?.name) || "Bloomer"}</h2><p class="muted">Here's your wellbeing snapshot today</p></div>
     </div>
     <div id="ai-banner" class="section">${skeleton("70px")}</div>
     <div class="grid cols-4 section" id="quick-stats"></div>

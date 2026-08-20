@@ -10,13 +10,13 @@ export async function render(container) {
     <div class="screen-title"><h2>Study planner</h2><p class="muted">Tasks, homework, and exam countdowns</p></div>
     <div class="glass-card section">
       <h3>Add task</h3>
-      <input id="task-title" placeholder="Title (e.g. Physics Chapter 4)" />
-      <select id="task-type">
+      <input id="task-title" placeholder="Title (e.g. Physics Chapter 4)" aria-label="Task title" />
+      <select id="task-type" aria-label="Task type">
         <option value="homework">Homework</option>
         <option value="revision">Revision</option>
         <option value="exam">Exam</option>
       </select>
-      <input id="task-date" type="date" />
+      <input id="task-date" type="date" aria-label="Due date" />
       <button id="task-add" class="gradient-btn">Add</button>
     </div>
     <div class="flex-between section">

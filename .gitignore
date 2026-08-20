@@ -5,3 +5,4 @@ Thumbs.db
 node_modules/
 .env
 js/config.js
+supabase/.temp/

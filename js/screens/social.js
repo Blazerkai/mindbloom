@@ -60,7 +60,7 @@ export async function render(container) {
       ${hasSupabase ? `
       <div class="glass-card section">
         <h3>Find people</h3>
-        <input id="friend-search" placeholder="Search by name…" />
+        <input id="friend-search" placeholder="Search by name…" aria-label="Search for friends by name" />
         <div class="list" id="search-results"></div>
       </div>` : `<p class="muted section">Friend search needs Supabase to be connected.</p>`}
       <h3>Your friends</h3>

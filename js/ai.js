@@ -1,4 +1,4 @@
-import { GEMINI_API_KEY, GEMINI_MODEL } from "./config.js";
+import { supabase, hasSupabase } from "./supabaseClient.js";
 import {
   waterRepo, sleepRepo, moodRepo, journalRepo, focusRepo, questRepo,
   playerRepo, studyPlannerRepo, goalsRepo, coachRepo,
@@ -62,50 +62,43 @@ function trend(values) {
 }
 
 // ======================================================================
-// 2. GEMINI CLIENT — thin wrapper; every call falls back to deterministic
-//    local logic (below) when no API key is configured or the call fails.
+// 2. GEMINI CLIENT — calls a Supabase Edge Function (supabase/functions/
+//    gemini-proxy) that holds the Gemini key server-side, so it never ships
+//    to the browser. Every call falls back to deterministic local logic
+//    (below) when Supabase isn't configured, the function isn't deployed,
+//    or the call fails for any reason.
 // ======================================================================
 export let lastGeminiError = null;
 
 async function callGemini(prompt) {
-  if (!GEMINI_API_KEY) return null;
+  if (!hasSupabase) return null;
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-      }
-    );
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      lastGeminiError = `HTTP ${res.status}: ${body.slice(0, 200)}`;
-      console.warn("Gemini call failed:", lastGeminiError);
+    const { data, error } = await supabase.functions.invoke("gemini-proxy", { body: { prompt } });
+    if (error) {
+      lastGeminiError = error.message;
+      console.warn("Gemini proxy call failed:", lastGeminiError);
       return null;
     }
-    const json = await res.json();
-    const text = json.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    if (!text) {
-      lastGeminiError = `No text in response (finishReason: ${json.candidates?.[0]?.finishReason || "unknown"})`;
-      console.warn("Gemini call returned no text:", json);
+    if (!data?.text) {
+      lastGeminiError = data?.error || "No text in response";
+      console.warn("Gemini proxy returned no text:", data);
       return null;
     }
     lastGeminiError = null;
-    return text;
+    return data.text;
   } catch (e) {
     lastGeminiError = e.message;
-    console.warn("Gemini call threw:", e);
+    console.warn("Gemini proxy call threw:", e);
     return null;
   }
 }
 
 // Lightweight connectivity check used by the Settings screen's "Test AI" button.
 export async function testGeminiConnection() {
-  if (!GEMINI_API_KEY) return { ok: false, message: "No API key set in js/config.js." };
+  if (!hasSupabase) return { ok: false, message: "Connect Supabase first — the AI proxy runs as a Supabase Edge Function." };
   const reply = await callGemini('Reply with exactly one word: "Connected".');
   if (reply) return { ok: true, message: reply };
-  return { ok: false, message: lastGeminiError || "Unknown error — check the browser console." };
+  return { ok: false, message: lastGeminiError || "Unknown error — check the browser console, or confirm the gemini-proxy function is deployed with its GEMINI_API_KEY secret set." };
 }
 
 // ======================================================================

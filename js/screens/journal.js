@@ -35,7 +35,7 @@ export async function render(container) {
   function drawJournal(body) {
     body.innerHTML = `
       <div class="glass-card section">
-        <textarea id="journal-text" rows="4" placeholder="What's on your mind today?"></textarea>
+        <textarea id="journal-text" rows="4" placeholder="What's on your mind today?" aria-label="Journal entry"></textarea>
         <button id="journal-save" class="gradient-btn">Save & analyze</button>
         <div id="journal-analysis" style="margin-top:0.8rem;"></div>
       </div>
@@ -68,17 +68,28 @@ export async function render(container) {
   async function drawJournalList(body) {
     const entries = await journalRepo.history(10);
     body.querySelector("#journal-list").innerHTML = entries.length
-      ? entries.map((e) => `<div class="list-item"><div class="main"><div class="title">${escapeHtml(e.text.slice(0, 90))}${e.text.length > 90 ? "…" : ""}</div><div class="sub">${e.date}</div></div></div>`).join("")
+      ? entries.map((e) => `
+        <div class="list-item">
+          <div class="main"><div class="title">${escapeHtml(e.text.slice(0, 90))}${e.text.length > 90 ? "…" : ""}</div><div class="sub">${e.date}</div></div>
+          <button class="icon-btn" data-remove-journal="${e.id}" title="Delete entry" aria-label="Delete entry">${icon("x", { size: 14 })}</button>
+        </div>`).join("")
       : `<p class="muted">No entries yet — write your first one above.</p>`;
+
+    body.querySelectorAll("[data-remove-journal]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        await journalRepo.remove(btn.dataset.removeJournal);
+        await drawJournalList(body);
+      });
+    });
   }
 
   function drawGratitude(body) {
     body.innerHTML = `
       <div class="glass-card section">
         <h3>Three things you're grateful for today</h3>
-        <input id="grat-1" placeholder="I'm grateful for…" />
-        <input id="grat-2" placeholder="I'm grateful for…" />
-        <input id="grat-3" placeholder="I'm grateful for…" />
+        <input id="grat-1" placeholder="I'm grateful for…" aria-label="Gratitude item 1" />
+        <input id="grat-2" placeholder="I'm grateful for…" aria-label="Gratitude item 2" />
+        <input id="grat-3" placeholder="I'm grateful for…" aria-label="Gratitude item 3" />
         <button id="grat-save" class="gradient-btn">Save gratitude list</button>
       </div>
       <div class="section">
@@ -107,8 +118,16 @@ export async function render(container) {
         <div class="list-item">
           <span class="icon-wrap">${icon("feather", { size: 17 })}</span>
           <div class="main"><div class="title">${e.items.map(escapeHtml).join(" · ")}</div><div class="sub">${e.date}</div></div>
+          <button class="icon-btn" data-remove-grat="${e.id}" title="Delete entry" aria-label="Delete entry">${icon("x", { size: 14 })}</button>
         </div>`).join("")
       : `<p class="muted">No gratitude entries yet — add three above.</p>`;
+
+    body.querySelectorAll("[data-remove-grat]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        await gratitudeRepo.remove(btn.dataset.removeGrat);
+        await drawGratList(body);
+      });
+    });
   }
 }
 

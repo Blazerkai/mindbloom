@@ -4,5 +4,8 @@
 export const SUPABASE_URL = ""; // e.g. "https://xxxxx.supabase.co"
 export const SUPABASE_ANON_KEY = ""; // the "anon" / "public" key from Project Settings > API
 
-export const GEMINI_API_KEY = ""; // paste a Google AI Studio key (https://aistudio.google.com/apikey) to enable live AI text generation
-export const GEMINI_MODEL = "gemini-flash-latest"; // an alias Google keeps pointed at their current flash model, so it won't go stale
+// The Gemini key is NOT configured here — it lives only as a Supabase Edge
+// Function secret (supabase/functions/gemini-proxy), so it never ships to
+// the browser. Deploy the function and run:
+//   supabase secrets set GEMINI_API_KEY=your-key-here
+// See README.md for the full setup steps.

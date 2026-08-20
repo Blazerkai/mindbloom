@@ -26,8 +26,8 @@ export async function render(container) {
     <div class="ai-banner section"><span class="icon-wrap">${icon("sparkles", { size: 20 })}</span><div><h4>Today's motivation</h4><p>${dailyQuote()}</p></div></div>
     <div class="glass-card section">
       <h3>Add a goal</h3>
-      <input id="goal-text" placeholder="e.g. Read 12 books this year" />
-      <input id="goal-target" type="number" min="1" placeholder="Target (e.g. 12)" />
+      <input id="goal-text" placeholder="e.g. Read 12 books this year" aria-label="Goal description" />
+      <input id="goal-target" type="number" min="1" placeholder="Target (e.g. 12)" aria-label="Goal target number" />
       <button id="goal-add" class="gradient-btn">Add goal</button>
     </div>
     <div class="list" id="goal-list"></div>

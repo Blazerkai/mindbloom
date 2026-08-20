@@ -30,9 +30,9 @@ export async function render(container) {
       <h3 style="margin:0;">Trusted contacts</h3>
     </div>
     <div class="glass-card section">
-      <input id="c-name" placeholder="Name" />
-      <input id="c-phone" placeholder="Phone number" />
-      <input id="c-relation" placeholder="Relationship (e.g. Mom, Best friend, Counselor)" />
+      <input id="c-name" placeholder="Name" aria-label="Contact name" />
+      <input id="c-phone" placeholder="Phone number" aria-label="Contact phone number" />
+      <input id="c-relation" placeholder="Relationship (e.g. Mom, Best friend, Counselor)" aria-label="Relationship to contact" />
       <button id="c-add" class="gradient-btn">Add trusted contact</button>
     </div>
     <div class="list" id="contact-list"></div>

@@ -1,6 +1,5 @@
 import { authService } from "../authService.js";
 import { profileRepo } from "../repositories.js";
-import { GEMINI_API_KEY } from "../config.js";
 import { hasSupabase } from "../supabaseClient.js";
 import { store } from "../store.js";
 import { testGeminiConnection } from "../ai.js";
@@ -18,17 +17,17 @@ export async function render(container, onSignOut) {
     <div class="screen-title"><h2>Settings</h2></div>
     <div class="glass-card section">
       <h3>Profile</h3>
-      <input id="s-name" placeholder="Name" value="${profile?.name || ""}" />
-      <input id="s-school" placeholder="School" value="${profile?.school || ""}" />
-      <input id="s-grade" placeholder="Grade" value="${profile?.grade || ""}" />
+      <input id="s-name" placeholder="Name" value="${profile?.name || ""}" aria-label="Name" />
+      <input id="s-school" placeholder="School" value="${profile?.school || ""}" aria-label="School" />
+      <input id="s-grade" placeholder="Grade" value="${profile?.grade || ""}" aria-label="Grade" />
       <button id="s-save" class="gradient-btn">Save</button>
     </div>
     <div class="glass-card section">
       <h3>Backend status</h3>
       <p>${hasSupabase ? '<span class="pill good">Supabase connected — all data (streaks, coins, levels, quests, everything) is stored in your Postgres database</span>' : '<span class="pill warn">Running on local storage — add Supabase credentials in js/config.js</span>'}</p>
       <div class="flex-between">
-        <p style="margin:0;">${GEMINI_API_KEY ? '<span class="pill good">Gemini key set</span>' : '<span class="pill warn">AI coach running on offline fallback — add a Gemini key in js/config.js</span>'}</p>
-        ${GEMINI_API_KEY ? `<button id="s-test-ai" class="ghost-btn small-btn">Test AI connection</button>` : ""}
+        <p style="margin:0;">${hasSupabase ? '<span class="pill good">AI proxy available (Supabase Edge Function)</span>' : '<span class="pill warn">AI coach running on offline fallback — connect Supabase to enable live AI</span>'}</p>
+        ${hasSupabase ? `<button id="s-test-ai" class="ghost-btn small-btn">Test AI connection</button>` : ""}
       </div>
       <p id="s-ai-result" class="muted" style="margin-top:0.4rem;"></p>
     </div>

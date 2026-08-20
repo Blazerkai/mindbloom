@@ -46,11 +46,11 @@ export function renderAuthGate(onSignedIn) {
 
     const fields = slot.querySelector("#auth-fields");
     fields.innerHTML = mode === "signup"
-      ? `<input id="f-name" placeholder="Your name" />
-         <input id="f-email" placeholder="Email" type="email" />
-         <input id="f-password" placeholder="Password" type="password" />`
-      : `<input id="f-email" placeholder="Email" type="email" />
-         <input id="f-password" placeholder="Password" type="password" />`;
+      ? `<input id="f-name" placeholder="Your name" aria-label="Your name" />
+         <input id="f-email" placeholder="Email" type="email" aria-label="Email" />
+         <input id="f-password" placeholder="Password" type="password" aria-label="Password" />`
+      : `<input id="f-email" placeholder="Email" type="email" aria-label="Email" />
+         <input id="f-password" placeholder="Password" type="password" aria-label="Password" />`;
 
     slot.querySelectorAll(".auth-tabs button").forEach((btn) => {
       btn.addEventListener("click", () => { mode = btn.dataset.mode; draw(); });
@@ -118,10 +118,10 @@ export function renderProfileSetup(container, onDone) {
         <span class="brand-logo">${icon("leaf", { size: 22 })}</span>
         <h1>Set up your profile</h1><p>A few quick details to personalize MindBloom</p>
       </div>
-      <input id="p-name" placeholder="Name" />
-      <input id="p-school" placeholder="School" />
-      <input id="p-grade" placeholder="Grade" />
-      <input id="p-goal" placeholder="Main goal (e.g. Ace my finals)" />
+      <input id="p-name" placeholder="Name" aria-label="Name" />
+      <input id="p-school" placeholder="School" aria-label="School" />
+      <input id="p-grade" placeholder="Grade" aria-label="Grade" />
+      <input id="p-goal" placeholder="Main goal (e.g. Ace my finals)" aria-label="Main goal" />
       <p class="auth-error" id="p-error" style="display:none;"></p>
       <button id="p-submit" class="gradient-btn" style="width:100%;">Get Started</button>
     </div>

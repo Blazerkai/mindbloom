@@ -16,29 +16,39 @@ window.addEventListener("unhandledrejection", (ev) => {
 
 import * as dashboard from "./screens/dashboard.js";
 import * as coach from "./screens/coach.js";
+import * as quests from "./screens/quests.js";
 import * as trackers from "./screens/trackers.js";
 import * as journal from "./screens/journal.js";
 import * as mindfulness from "./screens/mindfulness.js";
 import * as goals from "./screens/goals.js";
 import * as pomodoro from "./screens/pomodoro.js";
+import * as planner from "./screens/planner.js";
+import * as report from "./screens/report.js";
+import * as lifescore from "./screens/lifescore.js";
 import * as character from "./screens/character.js";
 import * as shop from "./screens/shop.js";
-import * as planner from "./screens/planner.js";
+import * as achievementsScreen from "./screens/achievementsScreen.js";
+import * as notifications from "./screens/notifications.js";
 import * as social from "./screens/social.js";
-import * as settingsScreen from "./screens/settings.js";
 import * as sos from "./screens/sos.js";
+import * as settingsScreen from "./screens/settings.js";
 
 const ROUTES = [
   { path: "/", icon: "home", label: "Home", mod: dashboard },
   { path: "/coach", icon: "cpu", label: "AI Coach", mod: coach },
+  { path: "/quests", icon: "checkCircle", label: "Daily Quests", mod: quests },
   { path: "/trackers", icon: "barChart", label: "Trackers", mod: trackers },
   { path: "/journal", icon: "bookOpen", label: "Journal & Gratitude", mod: journal },
   { path: "/mindfulness", icon: "wind", label: "Calm & Mindfulness", mod: mindfulness },
   { path: "/goals", icon: "compass", label: "Goals & Motivation", mod: goals },
   { path: "/planner", icon: "fileText", label: "Study Planner", mod: planner },
   { path: "/pomodoro", icon: "target", label: "Focus Timer", mod: pomodoro },
+  { path: "/report", icon: "trendingUp", label: "Weekly Report", mod: report },
+  { path: "/score", icon: "star", label: "MindBloom Score", mod: lifescore },
   { path: "/character", icon: "user", label: "Character", mod: character },
   { path: "/shop", icon: "shoppingBag", label: "Shop", mod: shop },
+  { path: "/achievements", icon: "award", label: "Achievements", mod: achievementsScreen },
+  { path: "/notifications", icon: "bell", label: "Notifications", mod: notifications },
   { path: "/social", icon: "users", label: "Leaderboard", mod: social },
   { path: "/sos", icon: "alertTriangle", label: "Emergency Help", mod: sos },
   { path: "/settings", icon: "settings", label: "Settings", mod: settingsScreen },
@@ -46,13 +56,25 @@ const ROUTES = [
 
 const BOTTOMNAV_PATHS = ["/", "/trackers", "/coach", "/social", "/settings"];
 
+function closeMobileNav() {
+  document.getElementById("sidenav").classList.remove("open");
+  document.getElementById("nav-backdrop").classList.remove("open");
+}
+
 function buildNav() {
   const sidenav = document.getElementById("sidenav");
   const bottomnav = document.getElementById("bottomnav");
   sidenav.innerHTML = ROUTES.map((r) => `<a href="#${r.path}" data-path="${r.path}">${icon(r.icon, { size: 16 })}<span>${r.label}</span></a>`).join("");
   bottomnav.innerHTML = ROUTES.filter((r) => BOTTOMNAV_PATHS.includes(r.path))
     .map((r) => `<a href="#${r.path}" data-path="${r.path}">${icon(r.icon, { size: 18 })}<span>${r.label}</span></a>`).join("");
+  sidenav.querySelectorAll("a").forEach((a) => a.addEventListener("click", closeMobileNav));
 }
+
+document.getElementById("btn-menu").addEventListener("click", () => {
+  document.getElementById("sidenav").classList.toggle("open");
+  document.getElementById("nav-backdrop").classList.toggle("open");
+});
+document.getElementById("nav-backdrop").addEventListener("click", closeMobileNav);
 
 function currentPath() {
   const hash = location.hash.replace(/^#/, "");

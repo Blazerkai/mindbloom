@@ -111,6 +111,9 @@ export const journalRepo = {
     const rows = await store.query("journal", (d) => d.userId === uid());
     return rows.sort((a, b) => b.ts - a.ts).slice(0, limit);
   },
+  async remove(id) {
+    return store.remove("journal", id);
+  },
 };
 
 export const gratitudeRepo = {
@@ -127,6 +130,9 @@ export const gratitudeRepo = {
   async history(days = 14) {
     const rows = await store.query("gratitude", (d) => d.userId === uid());
     return rows.sort((a, b) => (a.date < b.date ? -1 : 1)).slice(-days);
+  },
+  async remove(id) {
+    return store.remove("gratitude", id);
   },
 };
 
@@ -353,6 +359,10 @@ export const coachRepo = {
   },
   async add(role, text) {
     return store.add("coachChat", { userId: uid(), role, text, ts: Date.now() });
+  },
+  async clear() {
+    const rows = await store.query("coachChat", (c) => c.userId === uid());
+    await Promise.all(rows.map((r) => store.remove("coachChat", r.id)));
   },
 };
 

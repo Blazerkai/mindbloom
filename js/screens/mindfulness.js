@@ -12,14 +12,6 @@ const ACTIVITIES = [
     breathing: true,
   },
   {
-    id: "bodyScan",
-    icon: "sparkles",
-    title: "2-Minute Body Scan",
-    desc: "Release tension one area at a time.",
-    minutes: 2,
-    steps: ["Relax your forehead and jaw", "Drop your shoulders away from your ears", "Unclench your hands", "Soften your stomach", "Notice your feet on the floor"],
-  },
-  {
     id: "grounding",
     icon: "leaf",
     title: "5-4-3-2-1 Grounding",
