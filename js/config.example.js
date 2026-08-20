@@ -1,4 +1,5 @@
-// Copy this file to config.js (gitignored) and fill in real values.
+// Copy this file to config.js and fill in real values, then commit it — the
+// Supabase anon key is meant to be public (see the note in config.js).
 // Without Supabase config, the app runs fully offline against localStorage.
 
 export const SUPABASE_URL = ""; // e.g. "https://xxxxx.supabase.co"

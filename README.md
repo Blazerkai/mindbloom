@@ -16,7 +16,7 @@ Open the printed URL. Without `js/config.js`, the app runs entirely offline.
 
 1. Create a project at [supabase.com](https://supabase.com).
 2. In the SQL editor, run [`supabase/schema.sql`](supabase/schema.sql) — creates the `app_data` table, RLS policies, and the `leaderboard()` / `send_cheer()` RPCs.
-3. Copy `js/config.example.js` to `js/config.js` (gitignored) and fill in `SUPABASE_URL` / `SUPABASE_ANON_KEY` from Project Settings → API.
+3. Copy `js/config.example.js` to `js/config.js`, fill in `SUPABASE_URL` / `SUPABASE_ANON_KEY` from Project Settings → API, and commit it — this repo has no build step, so a static host (like GitHub Pages) needs this file checked in to work. The anon key is meant to be public; it's not a secret (see the comment in `config.js`).
 
 ## Enabling the AI coach (optional)
 
