@@ -1,4 +1,4 @@
-import { playerRepo, waterRepo, sleepRepo, moodRepo, focusRepo, questRepo, achievementsRepo } from "./repositories.js";
+import { playerRepo, waterRepo, sleepRepo, moodRepo, focusRepo, questRepo, achievementsRepo, gratitudeRepo, mindfulnessRepo } from "./repositories.js";
 
 // ---- catalog: generated tiers for each habit + hand-authored specials ----
 const HABITS = [
@@ -7,6 +7,8 @@ const HABITS = [
   { key: "mood", icon: "pulse", label: "Mood Check-ins" },
   { key: "focus", icon: "target", label: "Focus Sessions" },
   { key: "quest", icon: "shield", label: "Quests" },
+  { key: "gratitude", icon: "feather", label: "Gratitude" },
+  { key: "mindfulness", icon: "wind", label: "Mindfulness" },
 ];
 const STREAK_TIERS = [3, 7, 14, 30, 60, 100];
 const TIER_NAMES = ["common", "common", "rare", "epic", "epic", "legendary"];
@@ -122,7 +124,7 @@ export async function evaluateAchievements() {
 
   const streaks = await habitStreaks();
   await Promise.all(
-    ACHIEVEMENTS.filter((a) => ["water", "sleep", "mood", "focus", "quest"].includes(a.category)).map((a) => {
+    ACHIEVEMENTS.filter((a) => ["water", "sleep", "mood", "focus", "quest", "gratitude", "mindfulness"].includes(a.category)).map((a) => {
       const n = parseInt(a.id.split("_").at(-1), 10);
       return (streaks[a.category] || 0) >= n ? tryUnlock(a.id) : null;
     })
@@ -132,11 +134,13 @@ export async function evaluateAchievements() {
 }
 
 async function habitStreaks() {
-  const [water, sleep, mood, focus] = await Promise.all([
+  const [water, sleep, mood, focus, gratitude, mindfulnessSessions] = await Promise.all([
     waterRepo.history(100),
     sleepRepo.history(100),
     moodRepo.history(100),
     focusRepo.history(100),
+    gratitudeRepo.history(100),
+    mindfulnessRepo.history(100),
   ]);
   return {
     water: consecutiveDays(water.filter((d) => (d.ml || 0) > 0).map((d) => d.date)),
@@ -144,6 +148,8 @@ async function habitStreaks() {
     mood: consecutiveDays(mood.filter((d) => d.mood != null).map((d) => d.date)),
     focus: consecutiveDays([...new Set(focus.map((d) => d.date))]),
     quest: 0,
+    gratitude: consecutiveDays(gratitude.filter((d) => (d.items || []).length > 0).map((d) => d.date)),
+    mindfulness: consecutiveDays([...new Set(mindfulnessSessions.map((d) => d.date))]),
   };
 }
 

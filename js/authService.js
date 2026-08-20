@@ -78,6 +78,16 @@ export const authService = {
     return { id: user.id };
   },
 
+  async loginWithGoogle() {
+    if (!hasSupabase) throw new Error("Google sign-in requires Supabase to be configured.");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + window.location.pathname },
+    });
+    if (error) throw new Error(error.message);
+    // browser is redirected to Google now; execution resumes on callback via onAuthStateChange
+  },
+
   async resetPassword({ email, newPassword }) {
     if (hasSupabase) {
       const { error } = await supabase.auth.resetPasswordForEmail(email);

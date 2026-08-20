@@ -42,7 +42,7 @@ export const store = {
     if (!hasSupabase) return localDb.set(collection, id, doc);
     const uid = authService.currentUserId();
     const payload = { id, collection, user_id: uid, data: { ...doc, id } };
-    const { error } = await supabase.from(TABLE).upsert(payload);
+    const { error } = await supabase.from(TABLE).upsert(payload, { onConflict: "id,collection" });
     if (error) throw new Error(error.message);
     return payload.data;
   },

@@ -44,6 +44,9 @@ const PATHS = {
   chevronRight: '<polyline points="9 6 15 12 9 18"/>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/>',
   lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+  wind: '<path d="M4 8h9a2.5 2.5 0 10-2.4-3.2"/><path d="M4 16h12a2.5 2.5 0 11-2.4 3.2"/><path d="M4 12h6.5a2 2 0 10-1.9-2.6"/>',
+  phone: '<path d="M5 4h4l1.6 4.6L8.5 10a11 11 0 005.5 5.5l1.4-2.1L20 15v4a2 2 0 01-2.2 2C9.6 20.4 3.6 14.4 3 6.2A2 2 0 015 4z"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><polygon points="15 9 13 13 9 15 11 11 15 9"/>',
 };
 
 export function icon(name, { size = 18, className = "", strokeWidth = 1.8 } = {}) {

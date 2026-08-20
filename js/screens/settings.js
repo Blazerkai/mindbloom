@@ -2,6 +2,15 @@ import { authService } from "../authService.js";
 import { profileRepo } from "../repositories.js";
 import { GEMINI_API_KEY } from "../config.js";
 import { hasSupabase } from "../supabaseClient.js";
+import { store } from "../store.js";
+import { testGeminiConnection } from "../ai.js";
+
+const ALL_COLLECTIONS = [
+  "profiles", "players", "water", "sleep", "mood", "journal", "gratitude",
+  "mindfulnessSessions", "focusSessions", "quests", "goals", "studyTasks",
+  "achievements", "bossState", "trustedContacts", "friends", "notifications",
+  "coachChat", "reports", "xpLog",
+];
 
 export async function render(container, onSignOut) {
   const profile = await profileRepo.get();
@@ -16,8 +25,12 @@ export async function render(container, onSignOut) {
     </div>
     <div class="glass-card section">
       <h3>Backend status</h3>
-      <p>${hasSupabase ? '<span class="pill good">Supabase connected</span>' : '<span class="pill warn">Running on local storage — add Supabase credentials in js/config.js</span>'}</p>
-      <p>${GEMINI_API_KEY ? '<span class="pill good">Gemini connected</span>' : '<span class="pill warn">AI running on local fallback — add a Gemini key in js/config.js</span>'}</p>
+      <p>${hasSupabase ? '<span class="pill good">Supabase connected — all data (streaks, coins, levels, quests, everything) is stored in your Postgres database</span>' : '<span class="pill warn">Running on local storage — add Supabase credentials in js/config.js</span>'}</p>
+      <div class="flex-between">
+        <p style="margin:0;">${GEMINI_API_KEY ? '<span class="pill good">Gemini key set</span>' : '<span class="pill warn">AI coach running on offline fallback — add a Gemini key in js/config.js</span>'}</p>
+        ${GEMINI_API_KEY ? `<button id="s-test-ai" class="ghost-btn small-btn">Test AI connection</button>` : ""}
+      </div>
+      <p id="s-ai-result" class="muted" style="margin-top:0.4rem;"></p>
     </div>
     <div class="glass-card section">
       <h3>Data</h3>
@@ -38,14 +51,28 @@ export async function render(container, onSignOut) {
     alert("Saved.");
   });
 
-  container.querySelector("#s-export").addEventListener("click", () => {
+  container.querySelector("#s-test-ai")?.addEventListener("click", async () => {
+    const out = container.querySelector("#s-ai-result");
+    out.textContent = "Testing…";
+    const result = await testGeminiConnection();
+    out.innerHTML = result.ok
+      ? `<span class="pill good">Live — Gemini replied: "${result.message}"</span>`
+      : `<span class="pill danger">Failed — ${result.message}</span>`;
+  });
+
+  container.querySelector("#s-export").addEventListener("click", async () => {
+    const btn = container.querySelector("#s-export");
+    btn.disabled = true; btn.textContent = "Exporting…";
     const data = {};
-    Object.keys(localStorage).filter((k) => k.startsWith("mindbloom:")).forEach((k) => (data[k] = JSON.parse(localStorage.getItem(k))));
+    await Promise.all(ALL_COLLECTIONS.map(async (c) => {
+      data[c] = await store.all(c);
+    }));
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "mindbloom-data.json";
     a.click();
+    btn.disabled = false; btn.textContent = "Export my data (JSON)";
   });
 
   container.querySelector("#s-signout").addEventListener("click", async () => {

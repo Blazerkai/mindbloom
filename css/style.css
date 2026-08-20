@@ -95,6 +95,11 @@ button { font-family: var(--font); }
   cursor: pointer;
 }
 .icon-btn:hover { color: var(--text-hi); border-color: var(--accent); }
+.sos-btn { color: var(--danger); border-color: rgba(239,68,68,0.3); }
+.sos-btn:hover { background: rgba(239,68,68,0.1); border-color: var(--danger); color: var(--danger); }
+
+.danger-btn { background: var(--danger); }
+.danger-btn:hover { background: #dc2626; }
 
 input, textarea, select {
   width: 100%;
@@ -143,6 +148,8 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 }
 .auth-tabs button.active { background: var(--accent); color: white; border-color: var(--accent); }
 .auth-error { color: var(--danger); font-size: 0.82rem; margin: -0.3rem 0 0.6rem; }
+.auth-divider { display: flex; align-items: center; gap: 0.6rem; margin: 0.9rem 0; color: var(--text-lo); font-size: 0.78rem; }
+.auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--surface-border); }
 
 /* ============ Shell layout ============ */
 .shell { min-height: 100vh; display: flex; flex-direction: column; }
@@ -290,6 +297,55 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 .levelup-card { text-align: center; padding: 2rem 2.5rem; animation: pop-in 0.25s ease; }
 @keyframes pop-in { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .levelup-icon-wrap { display: inline-flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 16px; background: var(--accent-soft); color: var(--accent); margin-bottom: 0.6rem; }
+
+/* ============ Rank badges (leaderboard) ============ */
+.rank-item { transition: transform 0.15s ease, border-color 0.15s ease; }
+.rank-item:hover { transform: translateX(3px); }
+.rank-me { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 18px rgba(99,102,241,0.25); }
+.rank-gold .icon-wrap { color: #f5c518; }
+.rank-gold { border-color: rgba(245,197,24,0.4); background: linear-gradient(90deg, rgba(245,197,24,0.08), transparent); }
+.rank-silver .icon-wrap { color: #c7cad1; }
+.rank-silver { border-color: rgba(199,202,209,0.35); }
+.rank-bronze .icon-wrap { color: #d08a52; }
+.rank-bronze { border-color: rgba(208,138,82,0.35); }
+
+/* ============ Floating damage numbers ============ */
+.dmg-float {
+  position: fixed; z-index: 300; pointer-events: none;
+  font-weight: 800; font-size: 1.3rem; color: var(--danger);
+  text-shadow: 0 0 12px rgba(239,68,68,0.6);
+  transform: translate(-50%, -100%);
+}
+
+/* ============ Game-y button glow ============ */
+.gradient-btn { box-shadow: 0 0 0 rgba(99,102,241,0); }
+.gradient-btn:hover { box-shadow: 0 4px 18px rgba(99,102,241,0.35); }
+.danger-btn:hover { box-shadow: 0 4px 18px rgba(239,68,68,0.4) !important; }
+
+/* ============ Boss card glow ============ */
+#boss-card { position: relative; overflow: hidden; }
+#boss-card::before {
+  content: ""; position: absolute; inset: -40% -10% auto -10%; height: 60%;
+  background: radial-gradient(ellipse at center, rgba(239,68,68,0.18), transparent 70%);
+  pointer-events: none;
+}
+.boss-icon-wrap { box-shadow: 0 0 24px rgba(239,68,68,0.35); }
+
+/* ============ Route transition ============ */
+.view-enter { will-change: transform, opacity; }
+
+/* ============ Breathing exercise ============ */
+.breath-circle {
+  width: 120px; height: 120px; margin: 1.2rem auto;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  border: 2px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent); font-weight: 600; font-size: 0.82rem; text-align: center;
+  transform: scale(0.72);
+  transition: transform 4s ease-in-out;
+}
+.breath-circle.expand { transform: scale(1); }
 
 /* ============ Skeleton / loading ============ */
 .skel { border-radius: var(--radius-sm); background: linear-gradient(90deg, var(--surface), var(--surface-border), var(--surface)); background-size: 200% 100%; animation: shimmer 1.3s infinite; }

@@ -1,5 +1,6 @@
 import { store } from "./store.js";
 import { authService } from "./authService.js";
+import { supabase, hasSupabase } from "./supabaseClient.js";
 import { todayKey, weekKey, monthKey, levelFromTotalXp } from "./utils.js";
 
 function uid() {
@@ -112,6 +113,48 @@ export const journalRepo = {
   },
 };
 
+export const gratitudeRepo = {
+  async today() {
+    return store.get("gratitude", `${uid()}_${todayKey()}`);
+  },
+  async add(items) {
+    const date = todayKey();
+    const key = `${uid()}_${date}`;
+    const existing = await store.get("gratitude", key);
+    const merged = [...(existing?.items || []), ...items];
+    return store.set("gratitude", key, { userId: uid(), date, items: merged });
+  },
+  async history(days = 14) {
+    const rows = await store.query("gratitude", (d) => d.userId === uid());
+    return rows.sort((a, b) => (a.date < b.date ? -1 : 1)).slice(-days);
+  },
+};
+
+export const mindfulnessRepo = {
+  async logSession(activity, minutes) {
+    return store.add("mindfulnessSessions", { userId: uid(), activity, minutes, date: todayKey(), ts: Date.now() });
+  },
+  async today() {
+    return store.query("mindfulnessSessions", (d) => d.userId === uid() && d.date === todayKey());
+  },
+  async history(days = 30) {
+    const cutoff = todayKey(new Date(Date.now() - days * 86400000));
+    return store.query("mindfulnessSessions", (d) => d.userId === uid() && d.date >= cutoff);
+  },
+};
+
+export const trustedContactsRepo = {
+  async all() {
+    return store.query("trustedContacts", (c) => c.userId === uid());
+  },
+  async add(name, phone, relation) {
+    return store.add("trustedContacts", { userId: uid(), name, phone, relation });
+  },
+  async remove(id) {
+    return store.remove("trustedContacts", id);
+  },
+};
+
 export const focusRepo = {
   async logSession(minutes, completed) {
     return store.add("focusSessions", { userId: uid(), minutes, completed, date: todayKey(), ts: Date.now() });
@@ -201,14 +244,20 @@ export const bossRepo = {
   async state(bossId, maxHp) {
     const key = `${uid()}_${bossId}_${weekKey()}`;
     let s = await store.get("bossState", key);
-    if (!s) s = await store.set("bossState", key, { userId: uid(), bossId, week: weekKey(), hp: maxHp, maxHp, defeated: false });
+    if (!s) s = await store.set("bossState", key, { userId: uid(), bossId, week: weekKey(), hp: maxHp, maxHp, defeated: false, usedToday: {}, usedDate: todayKey() });
+    if (s.usedDate !== todayKey()) {
+      s = await store.update("bossState", key, { usedToday: {}, usedDate: todayKey() });
+    }
     return s;
   },
-  async damage(bossId, maxHp, amount) {
+  // one attack per weakness per day — prevents spam-clicking a weakness to instantly zero the boss
+  async attack(bossId, maxHp, weaknessLabel, amount) {
     const s = await bossRepo.state(bossId, maxHp);
-    const hp = Math.max(0, s.hp - amount);
     const key = `${uid()}_${bossId}_${weekKey()}`;
-    return store.update("bossState", key, { hp, defeated: hp === 0 });
+    if (s.defeated || s.usedToday[weaknessLabel]) return { ...s, blocked: true };
+    const hp = Math.max(0, s.hp - amount);
+    const updated = await store.update("bossState", key, { hp, defeated: hp === 0, usedToday: { ...s.usedToday, [weaknessLabel]: true } });
+    return { ...updated, blocked: false };
   },
 };
 
@@ -228,20 +277,25 @@ export const shopRepo = {
   },
 };
 
-// ============ SOCIAL (local simulation — no shared backend yet) ============
-const SEED_PEERS = [
-  { name: "Ava R.", xp: 4200, school: "Lincoln High" },
-  { name: "Noah K.", xp: 3800, school: "Lincoln High" },
-  { name: "Maya S.", xp: 3550, school: "Riverside High" },
-  { name: "Liam T.", xp: 3100, school: "Riverside High" },
-  { name: "Zoe P.", xp: 2700, school: "Lincoln High" },
-];
+// ============ SOCIAL ============
+// With Supabase configured, the leaderboard is real: a SECURITY DEFINER RPC
+// (see supabase/schema.sql) exposes name/school/level/xp for every signed-up
+// user, since normal RLS scopes each user to their own rows only. Offline
+// mode has no other users, so it just shows you.
 export const leaderboardRepo = {
-  async global() {
+  async global(limit = 100) {
     const me = await playerRepo.get();
     const profile = await profileRepo.get();
-    const rows = [...SEED_PEERS, { name: profile?.name || "You", xp: me.totalXp, isMe: true }];
-    return rows.sort((a, b) => b.xp - a.xp);
+    if (!hasSupabase) {
+      return [{ name: profile?.name || "You", xp: me.totalXp, level: me.level, isMe: true }];
+    }
+    const { data, error } = await supabase.rpc("leaderboard", { limit_n: limit });
+    if (error) throw new Error(error.message);
+    const myId = uid();
+    return (data || []).map((r) => ({
+      userId: r.user_id, name: r.name, school: r.school, level: r.level,
+      xp: r.total_xp, streak: r.streak, isMe: r.user_id === myId,
+    }));
   },
 };
 
@@ -249,11 +303,24 @@ export const friendsRepo = {
   async all() {
     return store.query("friends", (f) => f.userId === uid());
   },
-  async add(name) {
-    return store.add("friends", { userId: uid(), name, addedAt: Date.now() });
+  async add(friendUserId, name) {
+    const existing = await store.query("friends", (f) => f.userId === uid() && f.friendUserId === friendUserId);
+    if (existing.length) return existing[0];
+    return store.add("friends", { userId: uid(), friendUserId, name, addedAt: Date.now() });
   },
-  async cheer(friendName) {
-    return notificationsRepo.add(`You cheered ${friendName}.`);
+  async remove(id) {
+    return store.remove("friends", id);
+  },
+  async cheer(friendUserId, friendName) {
+    if (hasSupabase) {
+      const { error } = await supabase.rpc("send_cheer", {
+        target_user_id: friendUserId,
+        message: "A friend cheered you on MindBloom! 🎉",
+      });
+      if (error) throw new Error(error.message);
+    } else {
+      await notificationsRepo.add(`You cheered ${friendName}.`);
+    }
   },
 };
 
@@ -307,5 +374,46 @@ export const reportsRepo = {
 export const seasonRepo = {
   current() {
     return monthKey();
+  },
+};
+
+// ============ WEEKLY CHALLENGES ============
+// Progress is derived from real tracker data (not self-reported), scoped to the
+// current ISO week. Claiming a completed challenge is recorded once per user
+// per week so the reward can't be collected twice.
+const CHALLENGE_DEFS = {
+  hydration_week: { target: 5, reward: { xp: 40, coins: 20 } },
+  focus_marathon: { target: 10, reward: { xp: 60, coins: 30 } },
+  mood_streak: { target: 7, reward: { xp: 50, coins: 25 } },
+};
+
+export const challengesRepo = {
+  async progress() {
+    const week = weekKey();
+    const inWeek = (dateStr) => dateStr && weekKey(new Date(dateStr)) === week;
+
+    const waterDays = new Set((await waterRepo.history(14)).filter((d) => inWeek(d.date) && d.ml > 0).map((d) => d.date)).size;
+    const focusSessions = (await focusRepo.history(14)).filter((d) => inWeek(d.date) && d.completed).length;
+    const moodDays = new Set((await moodRepo.history(14)).filter((d) => inWeek(d.date)).map((d) => d.date)).size;
+
+    const claims = await store.query("challengeClaims", (c) => c.userId === uid() && c.week === week);
+    const claimedIds = new Set(claims.map((c) => c.challengeId));
+
+    return {
+      hydration_week: { progress: waterDays, target: CHALLENGE_DEFS.hydration_week.target, claimed: claimedIds.has("hydration_week") },
+      focus_marathon: { progress: focusSessions, target: CHALLENGE_DEFS.focus_marathon.target, claimed: claimedIds.has("focus_marathon") },
+      mood_streak: { progress: moodDays, target: CHALLENGE_DEFS.mood_streak.target, claimed: claimedIds.has("mood_streak") },
+    };
+  },
+  async claim(challengeId) {
+    const def = CHALLENGE_DEFS[challengeId];
+    if (!def) throw new Error("Unknown challenge.");
+    const week = weekKey();
+    const key = `${uid()}_${week}_${challengeId}`;
+    if (await store.get("challengeClaims", key)) throw new Error("Already claimed this week.");
+    const p = await challengesRepo.progress();
+    if (p[challengeId].progress < def.target) throw new Error("Not complete yet.");
+    await store.set("challengeClaims", key, { userId: uid(), week, challengeId, claimedAt: Date.now() });
+    return def.reward;
   },
 };

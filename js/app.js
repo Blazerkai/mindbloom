@@ -1,53 +1,50 @@
+import { gsap } from "./vendor/gsap/index.js";
+window.gsap = gsap;
+
 import { authService } from "./authService.js";
 import { profileRepo, playerRepo } from "./repositories.js";
 import { renderAuthGate, renderProfileSetup } from "./screens/auth.js";
 import { evaluateAchievements } from "./achievements.js";
-import { achievementUnlockToast } from "./fx.js";
+import { achievementUnlockToast, toast } from "./fx.js";
 import { icon } from "./icons.js";
+
+window.addEventListener("unhandledrejection", (ev) => {
+  console.error(ev.reason);
+  toast(ev.reason?.message === "No signed-in user" ? "Signed out — please log back in." : "Something went wrong. Please try again.", "error");
+  ev.preventDefault();
+});
 
 import * as dashboard from "./screens/dashboard.js";
 import * as coach from "./screens/coach.js";
-import * as burnout from "./screens/burnout.js";
-import * as futureYou from "./screens/futureYou.js";
-import * as quests from "./screens/quests.js";
 import * as trackers from "./screens/trackers.js";
 import * as journal from "./screens/journal.js";
+import * as mindfulness from "./screens/mindfulness.js";
+import * as goals from "./screens/goals.js";
 import * as pomodoro from "./screens/pomodoro.js";
-import * as lifescore from "./screens/lifescore.js";
-import * as report from "./screens/report.js";
 import * as character from "./screens/character.js";
 import * as shop from "./screens/shop.js";
-import * as seasons from "./screens/seasons.js";
-import * as achievementsScreen from "./screens/achievementsScreen.js";
-import * as boss from "./screens/boss.js";
 import * as planner from "./screens/planner.js";
 import * as social from "./screens/social.js";
-import * as notifications from "./screens/notifications.js";
 import * as settingsScreen from "./screens/settings.js";
+import * as sos from "./screens/sos.js";
 
 const ROUTES = [
   { path: "/", icon: "home", label: "Home", mod: dashboard },
   { path: "/coach", icon: "cpu", label: "AI Coach", mod: coach },
-  { path: "/burnout", icon: "flame", label: "Burnout", mod: burnout },
-  { path: "/future-you", icon: "trendingUp", label: "Future You", mod: futureYou },
-  { path: "/quests", icon: "target", label: "Quests", mod: quests },
   { path: "/trackers", icon: "barChart", label: "Trackers", mod: trackers },
-  { path: "/journal", icon: "bookOpen", label: "Journal", mod: journal },
-  { path: "/pomodoro", icon: "target", label: "Focus", mod: pomodoro },
-  { path: "/lifescore", icon: "star", label: "Life Score", mod: lifescore },
-  { path: "/report", icon: "calendar", label: "Weekly Report", mod: report },
-  { path: "/boss", icon: "shield", label: "Boss Battle", mod: boss },
+  { path: "/journal", icon: "bookOpen", label: "Journal & Gratitude", mod: journal },
+  { path: "/mindfulness", icon: "wind", label: "Calm & Mindfulness", mod: mindfulness },
+  { path: "/goals", icon: "compass", label: "Goals & Motivation", mod: goals },
   { path: "/planner", icon: "fileText", label: "Study Planner", mod: planner },
+  { path: "/pomodoro", icon: "target", label: "Focus Timer", mod: pomodoro },
   { path: "/character", icon: "user", label: "Character", mod: character },
   { path: "/shop", icon: "shoppingBag", label: "Shop", mod: shop },
-  { path: "/seasons", icon: "calendar", label: "Season", mod: seasons },
-  { path: "/achievements", icon: "award", label: "Achievements", mod: achievementsScreen },
-  { path: "/social", icon: "users", label: "Social", mod: social },
-  { path: "/notifications", icon: "bell", label: "Notifications", mod: notifications },
+  { path: "/social", icon: "users", label: "Leaderboard", mod: social },
+  { path: "/sos", icon: "alertTriangle", label: "Emergency Help", mod: sos },
   { path: "/settings", icon: "settings", label: "Settings", mod: settingsScreen },
 ];
 
-const BOTTOMNAV_PATHS = ["/", "/quests", "/coach", "/trackers", "/settings"];
+const BOTTOMNAV_PATHS = ["/", "/trackers", "/coach", "/social", "/settings"];
 
 function buildNav() {
   const sidenav = document.getElementById("sidenav");
@@ -74,23 +71,43 @@ async function router() {
     a.classList.toggle("active", a.dataset.path === route.path);
   });
   const view = document.getElementById("view");
+  const pane = document.createElement("div");
   view.innerHTML = "";
+  view.appendChild(pane);
   if (route.mod === settingsScreen) {
-    await route.mod.render(view, showAuthGate);
+    await route.mod.render(pane, showAuthGate);
   } else {
-    await route.mod.render(view);
+    await route.mod.render(pane);
+  }
+  // A later navigation may have already replaced this pane while the awaits above
+  // were in flight — skip animating/celebrating a screen the user has left.
+  if (!pane.isConnected) return;
+  if (window.gsap) {
+    window.gsap.fromTo(pane, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" });
   }
   const newly = await evaluateAchievements();
   newly.forEach((a) => achievementUnlockToast(a));
 }
 
+let lastKnownStats = null;
+
 export async function refreshTopbar() {
   const player = await playerRepo.get();
-  document.getElementById("topbar-stats").innerHTML = `
-    <span class="pill">${icon("star", { size: 13 })} Lv ${player.level}</span>
-    <span class="pill gold">${icon("coins", { size: 13 })} ${player.coins}</span>
-    <span class="pill">${icon("flame", { size: 13 })} ${player.streak}d</span>
+  const bar = document.getElementById("topbar-stats");
+  const changed = lastKnownStats && (lastKnownStats.coins !== player.coins || lastKnownStats.level !== player.level || lastKnownStats.streak !== player.streak);
+  bar.innerHTML = `
+    <span class="pill" data-stat="level">${icon("star", { size: 13 })} Lv ${player.level}</span>
+    <span class="pill gold" data-stat="coins">${icon("coins", { size: 13 })} ${player.coins}</span>
+    <span class="pill" data-stat="streak">${icon("flame", { size: 13 })} ${player.streak}d</span>
   `;
+  if (changed && window.gsap) {
+    const targets = [];
+    if (lastKnownStats.coins !== player.coins) targets.push(bar.querySelector('[data-stat="coins"]'));
+    if (lastKnownStats.level !== player.level) targets.push(bar.querySelector('[data-stat="level"]'));
+    if (lastKnownStats.streak !== player.streak) targets.push(bar.querySelector('[data-stat="streak"]'));
+    window.gsap.fromTo(targets, { scale: 1.35 }, { scale: 1, duration: 0.45, ease: "elastic.out(1, 0.45)" });
+  }
+  lastKnownStats = { coins: player.coins, level: player.level, streak: player.streak };
 }
 
 async function showApp() {

@@ -65,6 +65,8 @@ function trend(values) {
 // 2. GEMINI CLIENT — thin wrapper; every call falls back to deterministic
 //    local logic (below) when no API key is configured or the call fails.
 // ======================================================================
+export let lastGeminiError = null;
+
 async function callGemini(prompt) {
   if (!GEMINI_API_KEY) return null;
   try {
@@ -76,12 +78,34 @@ async function callGemini(prompt) {
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
       }
     );
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      lastGeminiError = `HTTP ${res.status}: ${body.slice(0, 200)}`;
+      console.warn("Gemini call failed:", lastGeminiError);
+      return null;
+    }
     const json = await res.json();
-    return json.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
-  } catch {
+    const text = json.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!text) {
+      lastGeminiError = `No text in response (finishReason: ${json.candidates?.[0]?.finishReason || "unknown"})`;
+      console.warn("Gemini call returned no text:", json);
+      return null;
+    }
+    lastGeminiError = null;
+    return text;
+  } catch (e) {
+    lastGeminiError = e.message;
+    console.warn("Gemini call threw:", e);
     return null;
   }
+}
+
+// Lightweight connectivity check used by the Settings screen's "Test AI" button.
+export async function testGeminiConnection() {
+  if (!GEMINI_API_KEY) return { ok: false, message: "No API key set in js/config.js." };
+  const reply = await callGemini('Reply with exactly one word: "Connected".');
+  if (reply) return { ok: true, message: reply };
+  return { ok: false, message: lastGeminiError || "Unknown error — check the browser console." };
 }
 
 // ======================================================================

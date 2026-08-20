@@ -66,25 +66,68 @@ export async function render(container) {
 
   const grid = container.querySelector("#weakness-grid");
   boss.weaknesses.forEach((w) => {
+    const usedToday = Boolean(state.usedToday?.[w.label]);
     const btn = document.createElement("button");
-    btn.className = "glass-card ghost-btn";
+    btn.className = "glass-card ghost-btn boss-weakness-btn";
     btn.style.cssText = "display:block;width:100%;text-align:center;padding:1rem;height:auto;";
-    btn.innerHTML = `<div>${w.label}</div><div class="muted">-${w.dmg} HP</div>`;
-    btn.disabled = state.defeated;
-    btn.addEventListener("click", async () => {
-      const updated = await bossRepo.damage(boss.id, boss.maxHp, w.dmg);
+    btn.innerHTML = usedToday
+      ? `<div>${w.label}</div><div class="muted">Used today — resets tomorrow</div>`
+      : `<div>${w.label}</div><div class="muted">-${w.dmg} HP</div>`;
+    btn.disabled = state.defeated || usedToday;
+    btn.addEventListener("click", async (ev) => {
+      const result = await bossRepo.attack(boss.id, boss.maxHp, w.label, w.dmg);
+      if (result.blocked) {
+        toast("Already used that today — come back tomorrow", "info");
+        btn.disabled = true;
+        return;
+      }
+      btn.disabled = true;
+      btn.innerHTML = `<div>${w.label}</div><div class="muted">Used today — resets tomorrow</div>`;
+
+      const card = container.querySelector("#boss-card");
       const iconEl = container.querySelector("#boss-icon");
-      iconEl.classList.add("shake");
-      setTimeout(() => iconEl.classList.remove("shake"), 350);
-      container.querySelector(".boss-hp-bar > div").style.width = `${(updated.hp / boss.maxHp) * 100}%`;
-      container.querySelector(".boss-hp-bar + p").textContent = `${updated.hp} / ${boss.maxHp} HP`;
+      spawnDamageNumber(ev.currentTarget, w.dmg);
+      if (window.gsap) {
+        window.gsap.timeline()
+          .to(card, { x: -8, duration: 0.05 })
+          .to(card, { x: 8, duration: 0.05 })
+          .to(card, { x: -5, duration: 0.05 })
+          .to(card, { x: 0, duration: 0.05 });
+        window.gsap.fromTo(iconEl, { scale: 1.25 }, { scale: 1, duration: 0.4, ease: "elastic.out(1, 0.4)" });
+        window.gsap.to(container.querySelector(".boss-hp-bar > div"), {
+          width: `${(result.hp / boss.maxHp) * 100}%`, duration: 0.5, ease: "power2.out",
+        });
+      } else {
+        iconEl.classList.add("shake");
+        setTimeout(() => iconEl.classList.remove("shake"), 350);
+        container.querySelector(".boss-hp-bar > div").style.width = `${(result.hp / boss.maxHp) * 100}%`;
+      }
+      container.querySelector(".boss-hp-bar + p").textContent = `${result.hp} / ${boss.maxHp} HP`;
       await grantXpAndCelebrate(8, "boss damage");
-      if (updated.hp === 0) {
+      if (result.hp === 0) {
         await playerRepo.addCoins(50);
         toast("Boss defeated — +50 coins", "success");
-        render(container);
+        setTimeout(() => render(container), 900);
       }
     });
     grid.appendChild(btn);
   });
+}
+
+function spawnDamageNumber(anchorEl, amount) {
+  const rect = anchorEl.getBoundingClientRect();
+  const el = document.createElement("div");
+  el.className = "dmg-float";
+  el.textContent = `-${amount}`;
+  el.style.left = rect.left + rect.width / 2 + "px";
+  el.style.top = rect.top + "px";
+  document.body.appendChild(el);
+  if (window.gsap) {
+    window.gsap.fromTo(el, { y: 0, opacity: 1, scale: 0.6 }, {
+      y: -60, opacity: 0, scale: 1.3, duration: 0.9, ease: "power1.out",
+      onComplete: () => el.remove(),
+    });
+  } else {
+    setTimeout(() => el.remove(), 900);
+  }
 }
